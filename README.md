@@ -1,27 +1,34 @@
-# NINPM 🦀
+# NINPM 🦀🔥
+> **NINPM Is Not a Package Manager**
 
-> **NINPM is Not a Package Manager**
+A lightning-fast, colorful, esnaf-style helper utility written in Rust for NixOS users who are tired of manual `configuration.nix` chores! 
 
-Welcome to **NINPM**, the ultimate state-of-mind utility for NixOS users who secretly want the convenience of traditional package managers without losing their sanity (or messing up their declarative configuration files manually).
+---
 
-## 🚀 What is this?
+## 🚀 Features
 
-NixOS is amazing, but sometimes you just want to quickly add or remove a package without digging through your `configuration.nix` files, dealing with syntax errors, or writing complex scripts. 
+* **Batch Package Support:** Add or explode multiple packages at once with a single command (`create` / `explode`).
+* **Esnaf UI 🎨:** Eye-pleasing ANSI colored terminal interface.
+* **Smart Search:** Fast flake-enabled search directly in nixpkgs (`search`).
+* **List View:** Instantly list everything inside your `systemPackages` block (`list`).
+* **Safety Net:** Automatically rolls back if the rebuild fails, keeping your system safe. Plus, it automatically handles git/libgit2 ownership quirks in the background.
 
-NINPM is a lightweight, compiled CLI tool written in **Rust** that automatically parses your NixOS configuration, injects or removes packages under `environment.systemPackages` safely, and shows you a clean diff—all before you even think about running `nixos-rebuild`.
+---
 
-## ⚡ Features
-
-- **Zero Traditional Bloat:** Written in pure Rust for high performance and a single static binary.
-- **Smart Parsing:** Automatically finds your system package blocks without breaking your formatting.
-- **Dry-Run Diff View:** Shows you exact changes before anything touches your system files.
-- **Explosive Cleanup:** Easily remove packages with clean deletion logic.
-
-## 🛠️ Usage
+## 📌 Usage
 
 ```bash
-# Add a package to your configuration
-sudo ninpm create <package_name>
+# Add packages and rebuild system
+sudo ninpm create htop btop fastfetch
 
-# Remove a package from your configuration
-sudo ninpm explode <package_name>
+# Remove packages (explode)
+sudo ninpm explode htop
+
+# Search for packages
+sudo ninpm search firefox
+
+# List installed packages
+sudo ninpm list
+
+# Detailed logs (for debugging)
+sudo ninpm create neovim --give-me-details
