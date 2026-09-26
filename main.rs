@@ -2,7 +2,6 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
-// ANSI Renk Kodları (Esnaf UI 🎨)
 const RESET: &str = "\x1b[0m";
 const RED: &str = "\x1b[31m";
 const GREEN: &str = "\x1b[32m";
@@ -53,7 +52,6 @@ fn main() {
     let mut content = fs::read_to_string(config_path)
         .expect("Failed to read configuration.nix");
 
-    // 1. LİSTELEME KOMUTU
     if action == "list" {
         println!("{CYAN}📦 Installed packages in systemPackages block:{RESET}");
         if let Some(start) = content.find("environment.systemPackages = with pkgs; [") {
@@ -71,7 +69,6 @@ fn main() {
         return;
     }
 
-    // 2. ARAMA KOMUTU (ninpm search <keyword>)
     if action == "search" {
         if args.len() < 3 {
             eprintln!("{RED}Error: Keyword required for search! Use: sudo ninpm search <keyword>{RESET}");
@@ -96,7 +93,6 @@ fn main() {
         return;
     }
 
-    // Paket adları kontrolü (create ve explode için çoklu paket desteği)
     let mut packages: Vec<String> = Vec::new();
     for arg in args.iter().skip(2) {
         if !arg.starts_with("--") {
@@ -172,12 +168,10 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Git ownership krizini kodun içinde otomatik ekarte ediyoruz amk! 👑
     let _ = Command::new("git")
         .args(["config", "--global", "--add", "safe.directory", "/etc/nixos"])
         .status();
 
-    // Rebuild işlemi
     let mut cmd = Command::new("nixos-rebuild");
     cmd.arg("switch");
 
