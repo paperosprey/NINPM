@@ -420,3 +420,5 @@ For questions or issues:
 **Happy hacking! 🚀** 
 
 NINPM makes NixOS package management painless and safe. Enjoy the speed and simplicity! 🦀🔥
+
+> This tool is made to help beginners fall in love with NixOS. If you're an 'advanced' user who thinks this tool is unnecessary, feel free to keep crying in the corner.
