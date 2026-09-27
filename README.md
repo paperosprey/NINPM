@@ -1,424 +1,495 @@
 <p align="center">
-  <img src="ninpm-logo.png" alt="NINPM Logo" width="500">
+  <img src="ninpm-logo.png" alt="NINPM logo" width="500">
 </p>
 
-# NINPM 🦀🔥
+<h1 align="center">NINPM 🦀</h1>
 
-> **NINPM Is Not a Package Manager**
+<p align="center">
+  <strong>NINPM Is Not a Package Manager</strong>
+</p>
 
-A blazingly fast, colorful CLI utility written in Rust that simplifies package management for NixOS users. NINPM automates the tedious task of manually editing `configuration.nix` and provides a safe, declarative way to add or remove system packages with automatic rollback protection.
+<p align="center">
+  A friendly little CLI that helps new NixOS users install and remove system packages without wrestling with <code>configuration.nix</code> on day one.
+</p>
 
----
-
-## ✨ Features
-
-- **🎯 Batch Package Management**: Add or remove multiple packages in a single command
-- **🎨 Colored Terminal UI**: Beautiful, eye-pleasing ANSI color output for better readability
-- **⚡ Fast Search**: Integrated nixpkgs search functionality (flake-enabled)
-- **📋 Package Listing**: Instantly view all packages in your `systemPackages` block
-- **🔄 Smart Rollback**: Automatic configuration rollback if `nixos-rebuild` fails
-- **💾 Automatic Backups**: Timestamped backups of every change, with smart pruning to prevent disk bloat
-- **✅ Syntax Validation**: Pre-validates Nix syntax before committing changes (when `nix-instantiate` is available)
-- **🏃 Dry Run Mode**: Preview changes without modifying files or rebuilding
-- **🛡️ Safe by Default**: Interactive confirmation for all destructive operations
-- **⚙️ Flexible Config Path**: Support for custom `configuration.nix` locations
+<p align="center">
+  <em>Because learning Nix is fun. Finding the right bracket while your coffee gets cold is less fun.</em>
+</p>
 
 ---
 
-## 📦 Installation
+## What is NINPM?
 
-### Prerequisites
+NINPM is a small Rust command-line tool for managing entries in the `environment.systemPackages` block of your NixOS configuration.
 
-NINPM requires:
-- **NixOS** system (or flakes enabled on your Nix setup)
-- **Rust toolchain** (for building from source)
-- Sudo/root access (to rebuild your system)
+It is designed primarily for **people who are new to NixOS** and want a simple answer to a simple question:
 
-### Building from Source
+> “I just want to install a package. What do I type?”
+
+With NINPM:
 
 ```bash
-# Clone the repository
-git clone https://github.com/paperosprey/NINPM
-cd NINPM
-
-# Build the release binary
-cargo build --release
-
-# The binary is now at: target/release/ninpm
+sudo ninpm create neovim
 ```
 
-### Setting Up with NixOS
+NINPM shows what will change, asks for confirmation, creates a backup, updates your configuration, and can run `nixos-rebuild switch` for you.
 
-Add `ninpm` to your `configuration.nix` using a custom shell wrapper. This ensures it's built and available system-wide:
+No ceremony. No configuration scavenger hunt. No opening your editor and wondering whether that bracket belongs there. 🦀
+
+### What NINPM is — and is not
+
+NINPM is:
+
+- a beginner-friendly helper for editing `configuration.nix`;
+- a convenient add/remove interface for simple `systemPackages` entries;
+- a safety net with backups, dry runs, and rollback support;
+- a small tool that helps you get comfortable using NixOS.
+
+NINPM is **not** a replacement for Nix, `nixos-rebuild`, flakes, Home Manager, or any other Nix tooling. Those tools remain available whenever you are ready to learn them. NINPM simply makes the first steps less intimidating.
+
+---
+
+## Why was it made?
+
+Installing one application should not feel like an entrance exam.
+
+On other systems, a new user might type:
+
+```bash
+sudo apt install neovim
+```
+
+or:
+
+```bash
+brew install neovim
+```
+
+On a typical NixOS setup, the same task usually means:
+
+1. Find the package name.
+2. Open `/etc/nixos/configuration.nix`.
+3. Locate `environment.systemPackages`.
+4. Add the package in the right place.
+5. Save the file.
+6. Run `sudo nixos-rebuild switch`.
+7. Figure out what went wrong if the rebuild fails.
+
+That workflow is perfectly valid. It is also a lot to throw at someone who has just installed NixOS and would like to use their applications before midnight.
+
+NINPM focuses on that onboarding gap. It gives beginners a practical, reversible way to install software while they gradually learn how NixOS works underneath.
+
+> You do not have to understand every part of the engine before turning on the car.
+
+---
+
+## Features
+
+- **Beginner-first commands** for adding and removing packages
+- **Batch operations** to add or remove several packages at once
+- **Preview before changes** so you can see what NINPM plans to do
+- **Interactive confirmation** before modifying your configuration
+- **Timestamped backups** before edits are written
+- **Automatic rollback** when `nixos-rebuild switch` fails
+- **Dry-run mode** for completely risk-free previews
+- **Best-effort Nix syntax validation** before writing
+- **Package search** through `nix search nixpkgs`
+- **Package listing** for the detected `systemPackages` block
+- **Custom configuration paths** for non-default setups
+- **Readable, colorful output** because terminals do not have to look like tax forms
+
+---
+
+## Requirements
+
+NINPM currently expects:
+
+- NixOS, or a Nix installation with the required commands available;
+- Rust and Cargo when building from source;
+- permission to read and write your configuration file;
+- permission to run `nixos-rebuild switch` when you want NINPM to rebuild the system.
+
+By default, NINPM works with:
+
+```text
+/etc/nixos/configuration.nix
+```
+
+You can provide another file with `--config`.
+
+---
+
+## Installation
+
+### Build from source
+
+```bash
+git clone https://github.com/paperosprey/NINPM.git
+cd NINPM
+cargo build --release
+```
+
+The compiled binary will be here:
+
+```text
+target/release/ninpm
+```
+
+You can try it directly:
+
+```bash
+sudo ./target/release/ninpm --help
+```
+
+### Make it available as `ninpm`
+
+The simplest temporary option is an alias:
+
+```bash
+alias ninpm='sudo /absolute/path/to/NINPM/target/release/ninpm'
+```
+
+For a persistent setup, add the binary to your NixOS configuration through a wrapper:
 
 ```nix
-{
-  environment.systemPackages = with pkgs; [
-    # ... your other packages ...
-    
-    (pkgs.writeShellScriptBin "ninpm" ''
-      exec ${builtins.toString /path/to/NINPM/target/release/ninpm} "$@"
-    '')
-  ];
-}
+environment.systemPackages = with pkgs; [
+  (writeShellScriptBin "ninpm" ''
+    exec /absolute/path/to/NINPM/target/release/ninpm "$@"
+  '')
+];
 ```
 
-**Where to find the path:**
-- After running `cargo build --release`, the binary is at `/path/to/NINPM/target/release/ninpm`
-- Replace `/path/to/NINPM` with the actual path where you cloned the repository
+Then rebuild once in the usual way:
 
-**Then rebuild:**
 ```bash
 sudo nixos-rebuild switch
 ```
 
-After this, `ninpm` will be available in your `$PATH` and can be called directly:
-
-```bash
-sudo ninpm create neovim
-```
-
-### Alternative: Direct Binary Wrapper
-
-If you want a simpler setup without modifying `configuration.nix` yet, you can create a quick alias:
-
-```bash
-alias ninpm='sudo /path/to/NINPM/target/release/ninpm'
-```
-
-Add this to your `.bashrc` or `.zshrc` for persistence.
+> A flake-based installation and binary releases are planned improvements. For now, building from source keeps the installation transparent and easy to inspect.
 
 ---
 
-## 🚀 Quick Start
+## Quick start
 
-### Add Packages
+### Add a package
 
 ```bash
-# Add a single package
 sudo ninpm create neovim
-
-# Add multiple packages at once
-sudo ninpm create htop btop lazygit ripgrep
 ```
 
-NINPM will:
-1. Check if packages are already declared
-2. Show you what will be added
-3. Ask for confirmation
-4. Back up your current configuration
-5. Inject packages into the `systemPackages` block
-6. Run `nixos-rebuild switch`
-7. Automatically rollback if the rebuild fails
-
-### Remove Packages
+Add multiple packages in one command:
 
 ```bash
-# Remove a single package
-sudo ninpm explode htop
+sudo ninpm create htop btop ripgrep lazygit
+```
 
-# Remove multiple packages
+Before changing anything, NINPM will:
+
+1. check whether the packages are already present;
+2. show the entries it intends to add;
+3. ask for confirmation;
+4. create a backup of the current file;
+5. validate the resulting Nix syntax when possible;
+6. update the `systemPackages` block;
+7. run `nixos-rebuild switch`, unless disabled;
+8. restore the previous content if the rebuild fails.
+
+A normal successful run looks roughly like this:
+
+```text
+The following would be added:
+  + neovim
+
+Apply this change? [y/N]: y
+📦 Backup saved: /etc/nixos/configuration.nix.ninpm-backup-...
+Configuration updated.
+⚙️  Triggering nixos-rebuild switch...
+🚀 System rebuild completed successfully!
+```
+
+### Remove a package
+
+```bash
+sudo ninpm explode htop
+```
+
+Multiple packages work too:
+
+```bash
 sudo ninpm explode htop btop firefox
 ```
 
-### Search for Packages
+`explode` is intentionally a slightly dramatic name for “remove”. The packages will survive. Probably.
+
+### Search for packages
 
 ```bash
 sudo ninpm search firefox
 sudo ninpm search python
 ```
 
-This delegates to `nix search nixpkgs <keyword>`, so all nixpkgs search syntax is supported.
+This delegates to `nix search nixpkgs`, so NINPM does not maintain a second package database.
 
-### List Current Packages
+### List packages
 
 ```bash
 sudo ninpm list
 ```
 
-Displays all packages currently in your `systemPackages` block with a clean, colored output.
+This displays the entries found in the detected `environment.systemPackages` block.
 
-### Manage Backups
+---
+
+## Safety tools
+
+### Preview without changing anything
+
+Use `--dry-run` when you want to see the plan first:
 
 ```bash
-# View available backups
+sudo ninpm create --dry-run neovim
+```
+
+This does not write files and does not trigger a rebuild.
+
+### Update the file without rebuilding
+
+If you want to inspect or rebuild later:
+
+```bash
+sudo ninpm create --no-rebuild neovim
+```
+
+### Restore a backup
+
+List available backups:
+
+```bash
 sudo ninpm rollback
+```
 
-# Restore a specific backup (1 = most recent)
+Restore the most recent backup:
+
+```bash
 sudo ninpm rollback 1
+```
+
+Restore another backup by its displayed index:
+
+```bash
 sudo ninpm rollback 3
+```
 
-# Clean old backups, keeping only the 5 most recent
+NINPM asks for confirmation before restoring unless you use `--yes`.
+
+### Remove old backups
+
+Keep the five most recent backups:
+
+```bash
 sudo ninpm clean-backups --keep 5
+```
 
-# Keep only the last 3 backups
+Keep only the three most recent:
+
+```bash
 sudo ninpm clean-backups --keep 3
 ```
 
 ---
 
-## 🎮 Advanced Usage
+## Command reference
 
-### Global Flags
+```text
+ninpm create <PACKAGE>...
+    Add one or more package entries.
 
-```bash
---config <PATH>        # Use a custom configuration.nix path (default: /etc/nixos/configuration.nix)
---dry-run              # Preview changes without modifying files or rebuilding
---no-rebuild           # Update configuration.nix but skip `nixos-rebuild switch`
---give-me-details      # Show full nixos-rebuild output instead of hiding it
--y, --yes              # Skip confirmation prompts (use with caution!)
+ninpm explode <PACKAGE>...
+    Remove one or more package entries.
+
+ninpm search <KEYWORD>
+    Search nixpkgs through the Nix CLI.
+
+ninpm list
+    List entries in the detected systemPackages block.
+
+ninpm rollback
+    List available configuration backups.
+
+ninpm rollback <INDEX>
+    Restore a backup by index, where 1 is the newest.
+
+ninpm clean-backups --keep <N>
+    Remove old backups and keep the newest N files.
 ```
 
-### Examples
+### Global options
+
+```text
+--config <PATH>       Use a custom configuration file.
+--dry-run             Preview changes without writing or rebuilding.
+--no-rebuild          Write the configuration but skip nixos-rebuild.
+--give-me-details     Show the full nixos-rebuild output.
+-y, --yes             Skip confirmation prompts.
+```
+
+Examples:
 
 ```bash
-# Preview what would happen without making changes
-sudo ninpm create --dry-run neovim
+# Use a custom configuration file
+sudo ninpm --config /home/me/nixos/configuration.nix create neovim
 
-# Add packages but don't rebuild yet
+# Add packages without rebuilding yet
 sudo ninpm create --no-rebuild neovim lazygit
 
-# Update a custom config file
-sudo ninpm --config /home/user/.config/nixos/config.nix create neovim
-
-# Add packages and skip confirmations
-sudo ninpm create -y htop btop
-
-# See detailed rebuild output if something goes wrong
+# Show the complete rebuild output
 sudo ninpm create --give-me-details neovim
+
+# Skip confirmation when you know exactly what you are doing
+sudo ninpm create --yes htop btop
 ```
+
+> `--yes` is convenient, but it is not a magic “please prevent all mistakes” button. Read the preview first when experimenting.
 
 ---
 
-## 🔧 How It Works
+## How NINPM edits the configuration
 
-### Architecture
+NINPM looks for an `environment.systemPackages = [ ... ]` block and works with the package entries inside it.
 
-NINPM consists of several key modules:
+For example, given:
 
-#### `cli.rs` – Command Interface
-Parses command-line arguments using `clap` (with derive macros). Defines all available subcommands and global flags.
-
-#### `actions.rs` – Core Logic
-Implements the main workflows:
-- **Create**: Parses the Nix file, identifies the `systemPackages` block, checks for duplicates, validates syntax, backs up, writes changes, and rebuilds
-- **Explode**: Finds and removes packages from `systemPackages`
-- **Search**: Delegates to `nix search nixpkgs`
-- **List**: Parses and displays current packages
-- **Rollback**: Restores from timestamped backups
-- **CleanBackups**: Prunes old backups
-
-#### `nixlist.rs` – Nix Parsing
-Custom parser that:
-- Locates the `environment.systemPackages = [ ... ]` block
-- Tokenizes items inside the block
-- Handles both simple (`pkgs.neovim`) and complex (`pkgs.python3.withPackages(...)`) expressions
-- Matches package names intelligently
-
-#### `backup.rs` – Backup System
-- Creates timestamped backups alongside your config file (e.g., `configuration.nix.ninpm-backup-1695123456`)
-- Lists and restores backups by index
-- Automatically prunes old backups (default: keeps last 10)
-- Best-effort backup creation (won't block main operations if it fails)
-
-#### `rebuild.rs` – System Rebuild
-- Validates Nix syntax before writing to disk using `nix-instantiate --parse`
-- Executes `nixos-rebuild switch` with optional output suppression
-- Returns exit status for success/failure detection
-
-#### `util.rs` – Utilities
-- ANSI color codes for terminal UI
-- Interactive confirmation prompts
-- Package name validation (allows alphanumerics, `-`, `_`, `.`, `/`)
-
-### Workflow Example: `ninpm create neovim`
-
-1. **Read** `/etc/nixos/configuration.nix`
-2. **Parse** to find `environment.systemPackages = [ ... ]` boundaries
-3. **Extract** existing packages and deduplicate input
-4. **Validate** package names (must be alphanumeric + `-`, `_`, `.`, `/`)
-5. **Check** if `neovim` is already declared (skip if found)
-6. **Display** preview: `+ neovim`
-7. **Confirm** with user (interactive or `--yes`)
-8. **Backup** old content to `configuration.nix.ninpm-backup-<timestamp>`
-9. **Validate** new Nix syntax via `nix-instantiate --parse -` (best-effort)
-10. **Write** updated configuration with `neovim` added
-11. **Rebuild** via `nixos-rebuild switch`
-12. **Monitor** rebuild output
-13. **Rollback** if rebuild fails (restore from backup, show error)
-14. **Prune** old backups if count exceeds 10
-
-### Safety Guarantees
-
-- **Pre-write validation**: Nix syntax is checked before touching the file
-- **Automatic backups**: Every change is timestamped and recoverable
-- **Automatic rollback**: If rebuild fails, config is immediately restored
-- **Confirmation prompts**: Destructive operations (create/explode) require user approval
-- **Dry-run mode**: Preview all changes risk-free with `--dry-run`
-
----
-
-## 🎨 UI & Colors
-
-NINPM uses ANSI colors to make output clear and scannable:
-
-| Color  | Usage                           |
-|--------|----------------------------------|
-| 🔵 Cyan    | Information & status updates     |
-| 🟢 Green   | Success messages & additions     |
-| 🟡 Yellow  | Warnings & confirmations         |
-| 🔴 Red     | Errors & removals                |
-| ⚪ Bold    | Important headers                |
-
-Example output:
-```
-📦 Backup saved: /etc/nixos/configuration.nix.ninpm-backup-1695123456
-⚙️  Triggering nixos-rebuild switch...
-🚀 System rebuild completed successfully!
+```nix
+environment.systemPackages = with pkgs; [
+  git
+  curl
+];
 ```
 
----
+running:
 
-## 🐛 Troubleshooting
-
-### "Are you root? Does the path exist?"
-
-NINPM needs sudo to read/write to `/etc/nixos/configuration.nix`. Run with `sudo`:
 ```bash
 sudo ninpm create neovim
 ```
 
-Or specify a custom readable config file:
-```bash
-sudo ninpm --config /path/to/config.nix create neovim
-```
+adds the requested entry to that block.
 
-### "The resulting file would not parse as valid Nix"
+NINPM performs a text-based edit rather than attempting to become a full Nix language formatter or evaluator. This keeps the tool small and predictable, but it also means there are some boundaries.
 
-Your package entry probably isn't a simple attribute path. NINPM expects entries like:
-- ✅ `pkgs.neovim`
-- ✅ `pkgs.python3`
-- ❌ `(pkgs.python3.withPackages(ps: [...]))` — Complex expressions should be added manually
+### Current limitations
 
-### Rebuild failed but no rollback?
+- The target must contain an `environment.systemPackages` list.
+- The parser is intended for normal package entries such as `neovim`, `pkgs.neovim`, or similar simple expressions.
+- Complex expressions, custom functions, unusual formatting, and heavily abstracted configurations may need to be edited manually.
+- NINPM currently focuses on system packages, not Home Manager packages or arbitrary Nix modules.
+- Syntax validation is best-effort. If `nix-instantiate` is unavailable, NINPM warns and continues.
 
-If `nixos-rebuild switch` returns a non-zero exit code, NINPM automatically restores the backup. If rollback still fails, manually restore from the backup file:
-```bash
-sudo cp /etc/nixos/configuration.nix.ninpm-backup-<timestamp> /etc/nixos/configuration.nix
-```
-
-### "Could not run nix-instantiate" warning
-
-NINPM tried to validate your Nix syntax but couldn't find `nix-instantiate` in PATH. This is a warning, not an error—the tool continues anyway. To fix:
-```bash
-nix-shell -p nix
-```
-
-### No packages found in systemPackages block?
-
-Make sure:
-1. Your config has an `environment.systemPackages = [ ... ]` block
-2. The block isn't commented out
-3. You're pointing to the right file with `--config`
+When in doubt, use `--dry-run`, keep your configuration in version control, and make sure you understand the proposed change before confirming. Nix is powerful; it also occasionally looks at a semicolon like it has personal feelings about it.
 
 ---
 
-## 🛠️ Development
+## The beginner-friendly workflow
 
-### Building
+NINPM is meant to be a stepping stone, not a locked door.
+
+A comfortable learning path might look like this:
+
+1. Use NINPM to install your first few packages.
+2. Notice what changes in `configuration.nix`.
+3. Try `--dry-run` to understand the proposed edit.
+4. Open the file and explore it when you feel ready.
+5. Gradually learn `nixos-rebuild`, flakes, Home Manager, and the rest of the Nix ecosystem.
+
+You can start with a friendly command and learn the deeper machinery at your own pace. There is no requirement to understand every Nix concept before installing a text editor.
+
+---
+
+## Development
+
+Build a debug version:
 
 ```bash
 cargo build
 ```
 
-### Running Tests (if any)
+Build an optimized version:
+
+```bash
+cargo build --release
+```
+
+Run tests:
 
 ```bash
 cargo test
 ```
 
-### Release Build
+The project is organized into focused modules:
+
+```text
+src/
+├── main.rs       # Application entry point
+├── cli.rs        # Command-line argument definitions
+├── actions.rs    # Create, remove, search, list, and rollback workflows
+├── nixlist.rs    # systemPackages parsing and matching
+├── backup.rs     # Backup, restore, and pruning logic
+├── rebuild.rs    # Syntax validation and nixos-rebuild execution
+└── util.rs       # Confirmation prompts, colors, and helpers
+```
+
+### Contributing
+
+Bug reports, documentation improvements, test cases, and ideas are welcome.
+
+Especially useful contributions include:
+
+- tests for unusual `configuration.nix` layouts;
+- support for more complex Nix expressions;
+- better error messages for beginners;
+- shell completions;
+- a flake package definition;
+- Home Manager support;
+- packaged binaries and release automation.
+
+If you report a rebuild problem, include the command you ran and the output from:
 
 ```bash
-cargo build --release
-# Binary: target/release/ninpm
+sudo ninpm create --give-me-details <package>
 ```
 
-### Dependencies
-
-- **clap 4.4.18**: Command-line argument parsing (derive macros)
-- **anyhow 1.0.86**: Error handling with context
-- Uses Rust 2021 edition
-
-### Code Structure
-
-```
-src/
-├── main.rs       # Entry point, command dispatch
-├── cli.rs        # Argument parser
-├── actions.rs    # Core workflows (create, explode, search, etc.)
-├── nixlist.rs    # Nix file parsing
-├── backup.rs     # Backup & restore logic
-├── rebuild.rs    # nixos-rebuild invocation
-└── util.rs       # Colors & utilities
-```
+Please do not include secrets, tokens, or private configuration content in bug reports.
 
 ---
 
-## 📜 License
-
-MIT License – See [LICENSE](LICENSE) file for details.
-
----
-
-## 🤝 Contributing
-
-Found a bug or have an idea? Open an issue or submit a pull request!
-
-### What Would Help
-
-- Flake package definition for easier installation
-- Additional tests and edge case handling
-- Support for more complex Nix expressions
-- Better error messages for common issues
-- Man pages or shell completions
-
----
-
-## ⚡ Performance
-
-NINPM is optimized for speed:
-- **Release build** uses `-O3 -lto` (maximum optimizations)
-- **Parsing** is linear, even for large configs
-- **Search** delegates to `nix search` (fast flakes-based implementation)
-- **No unnecessary rebuilds** — config validation happens before write
-
----
-
-## 🎯 Roadmap
+## Roadmap
 
 - [ ] Flake package definition
-- [ ] Shell completions (bash, zsh, fish)
-- [ ] Man page documentation
-- [ ] Interactive package selection from search results
-- [ ] Support for homeManager and nixos modules
-- [ ] Configuration profiles
-- [ ] Diff preview before rebuild
-- [ ] Binary releases for easier installation
+- [ ] Shell completions for bash, zsh, and fish
+- [ ] Man page
+- [ ] Binary releases
+- [ ] Interactive package selection
+- [ ] Support for Home Manager configurations
+- [ ] More parser coverage and edge-case tests
+- [ ] Improved diff presentation
 
 ---
 
-## 💬 Support
+## License
 
-For questions or issues:
-1. Check the **Troubleshooting** section above
-2. Search existing [GitHub Issues](https://github.com/paperosprey/NINPM/issues)
-3. Open a new issue with details about your setup and the command you ran
+NINPM is released under the MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
-**Happy hacking! 🚀** 
+## Final word
 
-NINPM makes NixOS package management painless and safe. Enjoy the speed and simplicity! 🦀🔥
+NixOS has a lot to teach, but a new user should not need a three-hour lecture before installing their first application.
 
-> This tool is made to help beginners fall in love with NixOS. If you're an 'advanced' user who thinks this tool is unnecessary, feel free to keep crying in the corner.
+NINPM exists to make that first experience friendlier:
+
+```bash
+sudo ninpm create firefox
+```
+
+Small command. Fewer sharp edges. More time actually using your system. 🦀
+
+Made for beginners, useful for everyone, and perfectly happy to get out of your way when you are ready to use the lower-level tools directly.
