@@ -13,11 +13,6 @@ fn read_config(path: &Path) -> Result<String> {
         .with_context(|| format!("reading {} (are you root? does the path exist?)", path.display()))
 }
 
-/// Writes `new_content`, but first: takes a backup of the OLD content, then
-/// (best-effort) checks the NEW content actually parses as valid Nix before
-/// committing it. If validation is unavailable (no `nix-instantiate` on
-/// PATH) we proceed anyway with a warning -- we never block someone from
-/// using the tool just because `nix` isn't installed in this environment.
 fn write_validated(path: &Path, old_content: &str, new_content: &str) -> Result<()> {
     match rebuild::validate_syntax(new_content) {
         Ok(true) => {}
