@@ -300,7 +300,10 @@ environment.systemPackages = with pkgs; [
 "#;
         let (open, close) = find_bracket_range(content).unwrap();
         assert!(open < close);
-        assert_eq!(&content[open..=close], "[" );
+        // open points to '[', close points to ']'
+        assert_eq!(&content[open..open+1], "[");
+        assert_eq!(&content[close..=close], "]");
+        // content between them includes the packages
         assert!(content[open + 1..close].contains("neovim"));
     }
 
@@ -315,6 +318,7 @@ environment.systemPackages = with pkgs; [
 "#;
         let (open, close) = find_bracket_range(content).unwrap();
         assert!(open < close);
+        assert_eq!(&content[open..open+1], "[");
         assert_eq!(&content[close..=close], "]");
     }
 
