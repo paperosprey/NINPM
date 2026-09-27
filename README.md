@@ -33,18 +33,56 @@ NINPM requires:
 ### Building from Source
 
 ```bash
+# Clone the repository
 git clone https://github.com/paperosprey/NINPM
 cd NINPM
+
+# Build the release binary
 cargo build --release
-sudo cp target/release/ninpm /usr/local/bin/
+
+# The binary is now at: target/release/ninpm
 ```
 
-### Via Nix Flakes (Coming Soon)
+### Setting Up with NixOS
 
-Once flakes are fully set up, you'll be able to use:
+Add `ninpm` to your `configuration.nix` using a custom shell wrapper. This ensures it's built and available system-wide:
+
+```nix
+{
+  environment.systemPackages = with pkgs; [
+    # ... your other packages ...
+    
+    (pkgs.writeShellScriptBin "ninpm" ''
+      exec ${builtins.toString /path/to/NINPM/target/release/ninpm} "$@"
+    '')
+  ];
+}
+```
+
+**Where to find the path:**
+- After running `cargo build --release`, the binary is at `/path/to/NINPM/target/release/ninpm`
+- Replace `/path/to/NINPM` with the actual path where you cloned the repository
+
+**Then rebuild:**
 ```bash
-nix run github:paperosprey/NINPM -- <command>
+sudo nixos-rebuild switch
 ```
+
+After this, `ninpm` will be available in your `$PATH` and can be called directly:
+
+```bash
+sudo ninpm create neovim
+```
+
+### Alternative: Direct Binary Wrapper
+
+If you want a simpler setup without modifying `configuration.nix` yet, you can create a quick alias:
+
+```bash
+alias ninpm='sudo /path/to/NINPM/target/release/ninpm'
+```
+
+Add this to your `.bashrc` or `.zshrc` for persistence.
 
 ---
 
