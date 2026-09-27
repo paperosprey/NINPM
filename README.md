@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="ninpm-logo.png" alt="NINPM Logo" width="500">
+</p>
+
 # NINPM 🦀🔥
 
 > **NINPM Is Not a Package Manager**
