@@ -25,10 +25,6 @@ fn now_ts() -> u64 {
         .unwrap_or(0)
 }
 
-/// Writes a timestamped backup of `content` next to `config_path`, then
-/// prunes old backups beyond `DEFAULT_KEEP` so they don't accumulate forever.
-/// Returns the backup path on success. Failures here are surfaced but never
-/// fatal to the caller's main operation -- caller decides how to handle it.
 pub fn create(config_path: &Path, content: &str) -> Result<PathBuf> {
     let (dir, file_name) = backup_dir_and_prefix(config_path);
     let backup_path = dir.join(format!("{file_name}.ninpm-backup-{}", now_ts()));
@@ -38,7 +34,6 @@ pub fn create(config_path: &Path, content: &str) -> Result<PathBuf> {
     Ok(backup_path)
 }
 
-/// Lists backups for `config_path`, newest first.
 pub fn list(config_path: &Path) -> Result<Vec<PathBuf>> {
     let (dir, file_name) = backup_dir_and_prefix(config_path);
     let prefix = format!("{file_name}.ninpm-backup-");
@@ -59,7 +54,6 @@ pub fn list(config_path: &Path) -> Result<Vec<PathBuf>> {
     Ok(backups.into_iter().map(|(_, p)| p).collect())
 }
 
-/// Deletes all but the newest `keep` backups. Returns how many were removed.
 pub fn prune(config_path: &Path, keep: usize) -> Result<usize> {
     let backups = list(config_path)?;
     let mut removed = 0;
@@ -71,8 +65,6 @@ pub fn prune(config_path: &Path, keep: usize) -> Result<usize> {
     Ok(removed)
 }
 
-/// Restores backup at 1-based `index` (1 = most recent) into `config_path`.
-/// Returns the path of the backup that was restored.
 pub fn restore(config_path: &Path, index: usize) -> Result<PathBuf> {
     let backups = list(config_path)?;
     if backups.is_empty() {
