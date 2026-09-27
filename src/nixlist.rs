@@ -199,3 +199,146 @@ pub fn item_matches(raw_item: &str, target: &str) -> bool {
 pub fn flatten_for_display(raw_item: &str) -> String {
     raw_item.split_whitespace().collect::<Vec<_>>().join(" ")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn canonical_path_removes_pkgs_prefix() {
+        assert_eq!(canonical_path("pkgs.neovim"), "neovim");
+        assert_eq!(canonical_path("  pkgs.vim  "), "vim");
+    }
+
+    #[test]
+    fn canonical_path_handles_complex_expressions() {
+        assert_eq!(
+            canonical_path("pkgs.python3.withPackages (ps: [ ps.numpy ])"),
+            "python3.withPackages"
+        );
+    }
+
+    #[test]
+    fn canonical_path_strips_trailing_semicolon() {
+        assert_eq!(canonical_path("pkgs.htop;"), "htop");
+    }
+
+    #[test]
+    fn canonical_path_works_without_pkgs_prefix() {
+        assert_eq!(canonical_path("htop"), "htop");
+        assert_eq!(canonical_path("custom.package"), "custom.package");
+    }
+
+    #[test]
+    fn first_segment_extracts_leading_path() {
+        assert_eq!(first_segment("python3.withPackages"), "python3");
+        assert_eq!(first_segment("neovim"), "neovim");
+        assert_eq!(first_segment("a.b.c.d"), "a");
+    }
+
+    #[test]
+    fn item_matches_exact_canonical_path() {
+        assert!(item_matches("pkgs.neovim", "neovim"));
+        assert!(!item_matches("pkgs.neovim", "vim"));
+    }
+
+    #[test]
+    fn item_matches_by_first_segment() {
+        assert!(item_matches("pkgs.python3.withPackages (ps: [ ps.numpy ])", "python3"));
+        assert!(item_matches("pkgs.python3", "python3"));
+    }
+
+    #[test]
+    fn item_matches_complex_expressions() {
+        assert!(item_matches(
+            "pkgs.python3.withPackages (ps: [ ps.numpy ps.pandas ])",
+            "python3.withPackages"
+        ));
+    }
+
+    #[test]
+    fn parse_items_single_item() {
+        let text = "    pkgs.neovim";
+        let items = parse_items(text);
+        assert_eq!(items.len(), 1);
+        assert_eq!(&text[items[0].start..items[0].end], "pkgs.neovim");
+    }
+
+    #[test]
+    fn parse_items_multiple_items() {
+        let text = "    pkgs.neovim\n    htop\n    lazygit";
+        let items = parse_items(text);
+        assert_eq!(items.len(), 3);
+    }
+
+    #[test]
+    fn parse_items_with_complex_expressions() {
+        let text = r#"    pkgs.neovim
+    pkgs.python3.withPackages (ps: [
+      ps.numpy
+      ps.pandas
+    ])
+    htop"#;
+        let items = parse_items(text);
+        assert_eq!(items.len(), 3);
+    }
+
+    #[test]
+    fn parse_items_respects_comments() {
+        let text = "    pkgs.neovim # this is a comment\n    htop";
+        let items = parse_items(text);
+        assert_eq!(items.len(), 2);
+    }
+
+    #[test]
+    fn find_bracket_range_simple() {
+        let content = r#"
+environment.systemPackages = with pkgs; [
+    pkgs.neovim
+    htop
+];
+"#;
+        let (open, close) = find_bracket_range(content).unwrap();
+        assert!(open < close);
+        assert_eq!(&content[open..=close], "[" );
+        assert!(content[open + 1..close].contains("neovim"));
+    }
+
+    #[test]
+    fn find_bracket_range_with_nested_brackets() {
+        let content = r#"
+environment.systemPackages = with pkgs; [
+    pkgs.python3.withPackages (ps: [
+        ps.numpy
+    ])
+];
+"#;
+        let (open, close) = find_bracket_range(content).unwrap();
+        assert!(open < close);
+        assert_eq!(&content[close..=close], "]");
+    }
+
+    #[test]
+    fn flatten_for_display_removes_extra_whitespace() {
+        assert_eq!(
+            flatten_for_display("pkgs.python3.withPackages  (ps:  [ ])"),
+            "pkgs.python3.withPackages (ps: [ ])"
+        );
+    }
+
+    #[test]
+    fn find_bracket_range_error_missing_target() {
+        let content = "some random config";
+        assert!(find_bracket_range(content).is_err());
+    }
+
+    #[test]
+    fn find_bracket_range_error_unbalanced_brackets() {
+        let content = r#"
+environment.systemPackages = with pkgs; [
+    pkgs.neovim
+    [ nested [ brackets
+"#;
+        assert!(find_bracket_range(content).is_err());
+    }
+}
