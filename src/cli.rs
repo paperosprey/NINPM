@@ -5,11 +5,17 @@ use std::path::PathBuf;
 #[command(
     name = "ninpm",
     version,
-    about = "NINPM Is Not a Package Manager -- a thin, safe helper around environment.systemPackages in configuration.nix"
+    about = "NINPM Is Not a Package Manager -- a thin, safe helper around environment.systemPackages in configuration.nix",
+    disable_help_flag = true,
+    disable_help_subcommand = true
 )]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Command,
+    pub command: Option<Command>,
+
+    /// Show help (custom screen, see help.rs)
+    #[arg(short = 'h', long, global = true)]
+    pub help: bool,
 
     /// Path to the Nix config file to edit (default: /etc/nixos/configuration.nix)
     #[arg(long, global = true)]
@@ -34,13 +40,15 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Show help, optionally for a single command
+    Help { topic: Option<String> },
     /// Add package(s) to configuration.nix and rebuild
     Create { packages: Vec<String> },
     /// Remove package(s) from configuration.nix and rebuild
     Explode { packages: Vec<String> },
     /// Search nixpkgs and print the single best match
     Search {
-        keyword: String,
+        keyword: Option<String>,
         /// Show the top 10 ranked matches instead of only the best one
         #[arg(long)]
         all: bool,
