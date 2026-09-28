@@ -38,8 +38,13 @@ pub enum Command {
     Create { packages: Vec<String> },
     /// Remove package(s) from configuration.nix and rebuild
     Explode { packages: Vec<String> },
-    /// Search nixpkgs for a keyword
-    Search { keyword: String },
+    /// Search nixpkgs and print the single best match
+    Search {
+        keyword: String,
+        /// Show the top 10 ranked matches instead of only the best one
+        #[arg(long)]
+        all: bool,
+    },
     /// List packages currently in the systemPackages block
     List,
     /// Restore a previous backup of configuration.nix
