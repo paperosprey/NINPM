@@ -2,6 +2,7 @@ mod actions;
 mod backup;
 mod cli;
 mod nixlist;
+mod progress;
 mod rebuild;
 mod util;
 
@@ -20,7 +21,7 @@ fn main() {
 
     let result = match &cli.command {
         Command::List => actions::list(&config_path),
-        Command::Search { keyword } => actions::search(keyword),
+        Command::Search { keyword, all } => actions::search(keyword, *all),
         Command::Create { packages } => actions::create(&cli, &config_path, packages),
         Command::Explode { packages } => actions::explode(&cli, &config_path, packages),
         Command::Rollback { index } => actions::rollback(&cli, &config_path, *index),
